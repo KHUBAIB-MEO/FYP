@@ -176,6 +176,17 @@ class DashboardPage(QWidget):
         self.content_card.clicked.connect(self.agentSelected.emit)
         grid_layout.addWidget(self.content_card)
 
+        # Agent 3: Product Hunter
+        self.product_card = AgentCard(
+            "producthunter",
+            "🛒",
+            "Product Hunter",
+            "Automatically discovers trending products from Reddit, Amazon, and AliExpress. AI scores each product for demand, competition, and estimated profit in Pakistan.",
+            self.theme
+        )
+        self.product_card.clicked.connect(self.agentSelected.emit)
+        grid_layout.addWidget(self.product_card)
+
         # Placeholder for future agents - add more cards here easily
         # self.seo_card = AgentCard("seo", "🔍", "SEO Agent", "...", self.theme)
 
@@ -223,5 +234,5 @@ class DashboardPage(QWidget):
         )
 
         # Update cards
-        for card in [self.email_card, self.content_card]:
+        for card in [self.email_card, self.content_card, self.product_card]:
             card.theme = theme
