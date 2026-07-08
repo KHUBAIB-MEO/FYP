@@ -990,6 +990,17 @@ class EmailPage(QWidget):
     def update_theme(self, theme):
         self.theme = theme
 
+        # --- Fix heading colors on theme change (added by fix_light_headings) ---
+        from PyQt6.QtWidgets import QLabel as _QLabel
+        for _lbl in self.findChildren(_QLabel):
+            _ss = _lbl.styleSheet()
+            if "font-weight: 700" in _ss or "font-weight: 800" in _ss:
+                import re as _re
+                _new = _re.sub(r"color:\s*#[0-9a-fA-F]{3,8}", f"color: {theme['text']}", _ss)
+                if "background" not in _new:
+                    _new += " background: transparent;"
+                _lbl.setStyleSheet(_new)
+
         # Overlay
         self.overlay.update_theme(theme)
 

@@ -82,9 +82,10 @@ class ProductHunter2Page(QWidget):
     # UI construction
     # ------------------------------------------------------------------ #
     def _setup_ui(self):
-        outer_layout = QVBoxLayout(self)
+        outer_layout = QHBoxLayout(self)
         outer_layout.setContentsMargins(0, 0, 0, 0)
         outer_layout.setSpacing(0)
+        outer_layout.addWidget(self._create_sidebar())
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -96,7 +97,7 @@ class ProductHunter2Page(QWidget):
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(16)
 
-        layout.addLayout(self._build_header())
+        layout.addWidget(self._build_page_title())
         layout.addWidget(self._build_separator())
         layout.addLayout(self._build_input_form())
         layout.addLayout(self._build_api_key_row())
@@ -110,21 +111,55 @@ class ProductHunter2Page(QWidget):
         scroll.setWidget(content)
         outer_layout.addWidget(scroll)
 
-    def _build_header(self):
-        row = QHBoxLayout()
+    def _create_sidebar(self):
+        sidebar = QFrame()
+        sidebar.setObjectName("sidebar")
+        sidebar.setFixedWidth(240)
+        sidebar.setStyleSheet(
+            f"QFrame#sidebar {{ background-color: {{self.theme['sidebar']}}; "
+            f"border-right: 1px solid {{self.theme['border']}}; }}".replace("{{", "{").replace("}}", "}")
+        )
+
+        col = QVBoxLayout(sidebar)
+        col.setContentsMargins(16, 24, 16, 24)
+        col.setSpacing(8)
+
         back_btn = QPushButton("←  Back to Dashboard")
         back_btn.setStyleSheet(self._button_style(secondary=True))
         back_btn.clicked.connect(self.backToDashboard.emit)
-        row.addWidget(back_btn)
-        row.addStretch()
+        col.addWidget(back_btn)
+
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setStyleSheet(f"background-color: {self.theme['border']}; max-height: 1px; margin: 8px 0;")
+        col.addWidget(line)
+
         title = QLabel("🛒  Product Hunter")
-        title.setStyleSheet(f"font-size: 24px; font-weight: 700; color: {self.theme['text']};")
-        row.addWidget(title)
-        row.addStretch()
-        spacer = QLabel("")
-        spacer.setFixedWidth(back_btn.sizeHint().width())
-        row.addWidget(spacer)
-        return row
+        title.setStyleSheet(f"font-size: 19px; font-weight: 700; color: {self.theme['text']}; padding: 8px 0 4px 0; background: transparent;")
+        title.setWordWrap(True)
+        col.addWidget(title)
+
+        blurb = QLabel("Find trending best-seller products, scored by opportunity — demand vs competition vs profit.")
+        blurb.setWordWrap(True)
+        blurb.setStyleSheet(f"font-size: 12px; color: {self.theme['text_light']}; padding: 0 0 8px 0; background: transparent;")
+        col.addWidget(blurb)
+
+        col.addStretch()
+
+        pill = QLabel("📊  Rule-based scoring")
+        pill.setStyleSheet(
+            f"font-size: 12px; color: {self.theme['text_light']}; padding: 12px; "
+            f"background-color: {self.theme['hover']}; border-radius: 8px;"
+        )
+        pill.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        col.addWidget(pill)
+
+        return sidebar
+
+    def _build_page_title(self):
+        title = QLabel("🛒  Product Hunter")
+        title.setStyleSheet(f"font-size: 24px; font-weight: 800; color: {self.theme['text']}; background: transparent;")
+        return title
 
     def _build_separator(self):
         line = QFrame()
