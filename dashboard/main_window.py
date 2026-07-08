@@ -6,12 +6,14 @@ import sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
+from PyQt6.QtWidgets import QWidget
 
 from dashboard.styles import generate_stylesheet
 from dashboard.dashboard_page import DashboardPage
+from producthunter2.producthunter2_page import ProductHunter2Page
 from emailagent.email_page import EmailPage
 from contentscripting.content_page import ContentPage
-from producthunter.producthunter_page import ProductHunterPage
+from emailscraper.emailscraper_page import EmailScraperPage
 from shared.settings import APP_NAME, get_theme, save_theme, LIGHT_THEME, DARK_THEME
 
 
@@ -39,21 +41,27 @@ class MainWindow(QMainWindow):
         self.dashboard_page = DashboardPage(self.current_theme)
         self.email_page = EmailPage(self.current_theme)
         self.content_page = ContentPage(self.current_theme)
-        self.product_hunter_page = ProductHunterPage(self.current_theme)
+        self.scraper_page = EmailScraperPage(self.current_theme)
+        self.hunter2_page = ProductHunter2Page(self.current_theme)
 
         # Add to stack
         self.central_stack.addWidget(self.dashboard_page)
         self.central_stack.addWidget(self.email_page)
         self.central_stack.addWidget(self.content_page)
-        self.central_stack.addWidget(self.product_hunter_page)
+        self.central_stack.addWidget(self.scraper_page)
+        self.central_stack.addWidget(self.hunter2_page)
+        
 
         # Connect signals
         self.dashboard_page.agentSelected.connect(self._open_agent)
         self.dashboard_page.theme_btn.clicked.connect(self._toggle_theme)
-
         self.email_page.backToDashboard.connect(self._back_to_dashboard)
         self.content_page.backToDashboard.connect(self._back_to_dashboard)
-        self.product_hunter_page.backToDashboard.connect(self._back_to_dashboard)
+        self.scraper_page.backToDashboard.connect(self._back_to_dashboard)
+        self.hunter2_page.backToDashboard.connect(self._back_to_dashboard)
+        self.hunter2_page.sendToContentAgent.connect(self._handle_content_from_hunter)
+        self.scraper_page.sendToEmailAgent.connect(self._handle_leads_from_scraper)
+        
 
         # Apply initial styles
         self._apply_styles()
@@ -77,37 +85,70 @@ class MainWindow(QMainWindow):
             self.central_stack.setCurrentIndex(2)
             self.content_page._load_models()
             self.content_page._check_ollama()
-        elif agent_id == "producthunter":
-            self.central_stack.setCurrentWidget(self.product_hunter_page)
+        elif agent_id == "emailscraper":
+            self.central_stack.setCurrentWidget(self.scraper_page)
+        elif agent_id == "producthunter2":
+            self.central_stack.setCurrentWidget(self.hunter2_page)
+
+    def _handle_leads_from_scraper(self, leads):
+        self.email_page.add_recipients_from_leads(leads)
+        self.central_stack.setCurrentWidget(self.email_page)
+
+    def _handle_content_from_hunter(self, payload):
+        self.content_page.topic_input.setPlainText(payload.get("topic", ""))
+        self.content_page.keywords_input.setText(payload.get("keywords", ""))
+        self.central_stack.setCurrentWidget(self.content_page)
 
     def _back_to_dashboard(self):
         """Return to dashboard from any agent"""
         self.central_stack.setCurrentIndex(0)
 
+    def _force_restyle(self, widget):
+        """Force Qt to drop cached styling and recompute — without this,
+        a theme change often doesn't visually apply because Qt caches
+        stylesheets and inline styles override the global one."""
+        widget.style().unpolish(widget)
+        widget.style().polish(widget)
+        widget.update()
+        for child in widget.findChildren(QWidget):
+            child.style().unpolish(child)
+            child.style().polish(child)
+            child.update()
+
     def _toggle_theme(self):
-        """Toggle between light and dark themes globally"""
+        """Toggle theme WITHOUT rebuilding pages (rebuilding re-ran the slow
+        Ollama network call and hung the app). Each page re-themes itself
+        in place; the global stylesheet is re-applied for the shell."""
         self.is_dark = not self.is_dark
         self.current_theme = DARK_THEME if self.is_dark else LIGHT_THEME
-        self.product_hunter_page.update_theme(self.current_theme)
-
-        # Save preference
         save_theme(self.is_dark)
 
-        # Update all pages
+        # Re-theme each page in place (lightweight, no __init__, no network)
         self.dashboard_page.update_theme(self.current_theme)
         self.email_page.update_theme(self.current_theme)
         self.content_page.update_theme(self.current_theme)
+        self.scraper_page.update_theme(self.current_theme)
+        self.hunter2_page.update_theme(self.current_theme)
 
-        # Update button texts
-        btn_text = "☀️  Light Mode" if self.is_dark else "🌙  Dark Mode"
-        self.dashboard_page.theme_btn.setText(btn_text)
+        self.dashboard_page.theme_btn.setText(
+            "\u2600\ufe0f  Light Mode" if self.is_dark else "\U0001f319  Dark Mode"
+        )
 
-        # Re-apply stylesheet
-        self._apply_styles()
+        # Re-apply the global stylesheet so the window shell + any
+        # selector-based styling updates too.
+        self.setStyleSheet(generate_stylesheet(self.current_theme))
 
-        # Force refresh
-        self.update()
-        QApplication.processEvents()
+        # Force Qt to drop cached styling on every widget so inline styles
+        # that were just updated actually repaint.
+        for page in [self.dashboard_page, self.email_page, self.content_page,
+                     self.scraper_page, self.hunter2_page]:
+            page.style().unpolish(page)
+            page.style().polish(page)
+            page.update()
+            for child in page.findChildren(QWidget):
+                child.style().unpolish(child)
+                child.style().polish(child)
+                child.update()
 
     def _apply_styles(self):
         """Apply global stylesheet"""

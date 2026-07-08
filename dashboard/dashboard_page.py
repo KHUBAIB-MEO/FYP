@@ -95,144 +95,98 @@ class DashboardPage(QWidget):
         self._setup_ui()
 
     def _setup_ui(self):
-        layout = QVBoxLayout(self)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+
+        content = QWidget()
+        layout = QVBoxLayout(content)
         layout.setContentsMargins(48, 48, 48, 48)
         layout.setSpacing(32)
 
-        # Header
         header_layout = QHBoxLayout()
-
         title_layout = QVBoxLayout()
         title = QLabel("🤖 AI Agent Platform")
-        title.setStyleSheet(
-            f"font-size: 36px; font-weight: 800; color: {self.theme['text']};"
-        )
+        title.setStyleSheet(f"font-size: 36px; font-weight: 800; color: {self.theme['text']};")
         title_layout.addWidget(title)
-
         subtitle = QLabel("Select an agent to get started")
-        subtitle.setStyleSheet(
-            f"font-size: 16px; color: {self.theme['text_light']}; margin-top: 4px;"
-        )
+        subtitle.setStyleSheet(f"font-size: 16px; color: {self.theme['text_light']}; margin-top: 4px;")
         title_layout.addWidget(subtitle)
-
         header_layout.addLayout(title_layout)
         header_layout.addStretch()
 
-        # Theme toggle on dashboard
         self.theme_btn = QPushButton("🌙  Dark Mode")
         self.theme_btn.setObjectName("theme_toggle")
         self.theme_btn.setFixedWidth(140)
         self.theme_btn.setFixedHeight(40)
         self.theme_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.theme_btn.setStyleSheet(
-            f"QPushButton {{"
-            f"  background-color: {self.theme['hover']};"
-            f"  color: {self.theme['text_light']};"
-            f"  border: 1px solid {self.theme['border']};"
-            f"  border-radius: 20px;"
-            f"  padding: 8px 16px;"
-            f"  font-size: 13px;"
-            f"  font-weight: 600;"
-            f"}}"
-            f"QPushButton:hover {{"
-            f"  background-color: {self.theme['border']};"
-            f"  color: {self.theme['text']};"
-            f"}}"
+            f"QPushButton {{ background-color: {self.theme['hover']}; color: {self.theme['text_light']};"
+            f" border: 1px solid {self.theme['border']}; border-radius: 20px; padding: 8px 16px;"
+            f" font-size: 13px; font-weight: 600; }}"
+            f"QPushButton:hover {{ background-color: {self.theme['border']}; color: {self.theme['text']}; }}"
         )
         header_layout.addWidget(self.theme_btn)
-
         layout.addLayout(header_layout)
 
-        # Separator
         line = QFrame()
         line.setFrameShape(QFrame.Shape.HLine)
         line.setStyleSheet(f"background-color: {self.theme['border']}; max-height: 1px;")
         layout.addWidget(line)
 
-        # Agents grid
-        grid_layout = QHBoxLayout()
+        grid_layout = QGridLayout()
         grid_layout.setSpacing(24)
-        grid_layout.addStretch()
 
-        # Agent 1: Email Agent
+        agents = []
+
         self.email_card = AgentCard(
-            "email",
-            "✉️",
-            "Email Agent",
+            "email", "✉️", "Email Agent",
             "Generate professional, funny, emotional, or persuasive emails. Import recipients from Excel, auto-generate subject lines, and send bulk emails with one click.",
-            self.theme
-        )
+            self.theme)
         self.email_card.clicked.connect(self.agentSelected.emit)
-        grid_layout.addWidget(self.email_card)
+        agents.append(self.email_card)
 
-        # Agent 2: Content Scripting
         self.content_card = AgentCard(
-            "content",
-            "📝",
-            "Content Scripting",
+            "content", "📝", "Content Scripting",
             "Generate blog posts, social media captions, ad copy, scripts, and any content with AI. Choose your model, set the tone, and get polished content instantly.",
-            self.theme
-        )
+            self.theme)
         self.content_card.clicked.connect(self.agentSelected.emit)
-        grid_layout.addWidget(self.content_card)
+        agents.append(self.content_card)
 
-        # Agent 3: Product Hunter
-        self.product_card = AgentCard(
-            "producthunter",
-            "🛒",
-            "Product Hunter",
-            "Automatically discovers trending products from Reddit, Amazon, and AliExpress. AI scores each product for demand, competition, and estimated profit in Pakistan.",
-            self.theme
-        )
-        self.product_card.clicked.connect(self.agentSelected.emit)
-        grid_layout.addWidget(self.product_card)
+        self.scraper_card = AgentCard(
+            "emailscraper", "📧", "Email Scraper",
+            "Find business emails by keyword and city - searches Google Maps, crawls each website, and builds a ready-to-use lead list for the Email Agent.",
+            self.theme)
+        self.scraper_card.clicked.connect(self.agentSelected.emit)
+        agents.append(self.scraper_card)
 
-        # Placeholder for future agents - add more cards here easily
-        # self.seo_card = AgentCard("seo", "🔍", "SEO Agent", "...", self.theme)
+        self.hunter2_card = AgentCard(
+            "producthunter2", "🛒", "Product Hunter",
+            "Finds trending best-seller products and scores each one for opportunity - demand vs competition vs profit - so you spot winners, not just popular items.",
+            self.theme)
+        self.hunter2_card.clicked.connect(self.agentSelected.emit)
+        agents.append(self.hunter2_card)
 
-        grid_layout.addStretch()
+        COLUMNS = 3
+        for i, card in enumerate(agents):
+            grid_layout.addWidget(card, i // COLUMNS, i % COLUMNS, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addLayout(grid_layout)
 
-        # Footer
-        footer = QLabel("More agents coming soon • Built with ❤️ for your FYP")
-        footer.setStyleSheet(
-            f"font-size: 13px; color: {self.theme['text_light']}; margin-top: 40px;"
-        )
+        footer = QLabel("More agents coming soon - Built with love for your FYP")
+        footer.setStyleSheet(f"font-size: 13px; color: {self.theme['text_light']}; margin-top: 40px;")
         footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(footer)
-
         layout.addStretch()
 
+        scroll.setWidget(content)
+        outer_layout.addWidget(scroll)
+
     def update_theme(self, theme):
-        """Update dashboard colors when theme changes"""
+        """Theme is applied by rebuilding the whole page in main_window,
+        so this just stores the new theme reference."""
         self.theme = theme
-        # Update header
-        for child in self.findChildren(QLabel):
-            text = child.text()
-            if "AI Agent Platform" in text:
-                child.setStyleSheet(f"font-size: 36px; font-weight: 800; color: {theme['text']};")
-            elif "Select an agent" in text:
-                child.setStyleSheet(f"font-size: 16px; color: {theme['text_light']}; margin-top: 4px;")
-            elif "coming soon" in text:
-                child.setStyleSheet(f"font-size: 13px; color: {theme['text_light']}; margin-top: 40px;")
-
-        # Update theme button
-        self.theme_btn.setStyleSheet(
-            f"QPushButton {{"
-            f"  background-color: {theme['hover']};"
-            f"  color: {theme['text_light']};"
-            f"  border: 1px solid {theme['border']};"
-            f"  border-radius: 20px;"
-            f"  padding: 8px 16px;"
-            f"  font-size: 13px;"
-            f"  font-weight: 600;"
-            f"}}"
-            f"QPushButton:hover {{"
-            f"  background-color: {theme['border']};"
-            f"  color: {theme['text']};"
-            f"}}"
-        )
-
-        # Update cards
-        for card in [self.email_card, self.content_card, self.product_card]:
-            card.theme = theme

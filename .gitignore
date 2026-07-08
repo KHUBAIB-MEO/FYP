@@ -1,0 +1,41 @@
+# Virtual environment (never commit — regenerate from requirements.txt)
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Playwright browsers (huge, regenerate with: playwright install chromium)
+ms-playwright/
+
+# App-generated / local files
+*.db
+.theme
+dashboard_dump.txt
+*.backup
+*.backup2
+theme_diagnostic.py
+deep_diagnostic.py
+fix_toggle.py
+fix_dashboard.py
+fix_toggle_fast.py
+
+# Excel exports / outputs
+*.xlsx
+outputs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets — never commit API keys
+.env
+*.key

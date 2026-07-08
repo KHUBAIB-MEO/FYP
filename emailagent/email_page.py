@@ -202,13 +202,8 @@ class EmailPage(QWidget):
         return page
 
     def _create_recipients_panel(self):
-        panel = QScrollArea()
-        panel.setWidgetResizable(True)
-        panel.setFrameShape(QFrame.Shape.NoFrame)
-        panel.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
-        container = QWidget()
-        layout = QVBoxLayout(container)
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
         layout.setContentsMargins(0, 0, 12, 0)
         layout.setSpacing(16)
 
@@ -288,8 +283,10 @@ class EmailPage(QWidget):
         recipients_scroll.setWidgetResizable(True)
         recipients_scroll.setFrameShape(QFrame.Shape.NoFrame)
         recipients_scroll.setMaximumHeight(400)
+        recipients_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self.recipients_container = QWidget()
+        self.recipients_container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         self.recipients_list_layout = QVBoxLayout(self.recipients_container)
         self.recipients_list_layout.setContentsMargins(0, 0, 0, 0)
         self.recipients_list_layout.setSpacing(4)
@@ -301,7 +298,6 @@ class EmailPage(QWidget):
         layout.addWidget(list_group)
         layout.addStretch()
 
-        panel.setWidget(container)
         return panel
 
     def _create_composition_panel(self):
@@ -659,6 +655,12 @@ class EmailPage(QWidget):
             item.set_checked(rec["checked"])
             item.toggled.connect(self._on_recipient_toggle)
             self.recipients_list_layout.insertWidget(self.recipients_list_layout.count() - 1, item)
+
+        # Without this, Qt sometimes keeps the OLD scrollable height after
+        # adding widgets at runtime — only the first item shows and the list
+        # won't scroll to reveal the rest.
+        self.recipients_container.updateGeometry()
+
         self._update_recipient_count()
 
     def _on_recipient_toggle(self, email, checked):
@@ -685,6 +687,27 @@ class EmailPage(QWidget):
 
     def _get_selected_recipients(self):
         return [r for r in self.recipients if r["checked"]]
+    
+    def add_recipients_from_leads(self, leads):
+        """
+        Called externally by the Email Scraper agent to inject recipients
+        directly, skipping the Excel export/import round-trip.
+        `leads` is a list of {"email": ..., "name": ...} dicts.
+        """
+        existing_emails = {r["email"].lower() for r in self.recipients}
+        added = 0
+        for entry in leads:
+            email = entry.get("email", "").strip()
+            name = entry.get("name", "").strip()
+            if not email or email.lower() in existing_emails:
+                continue
+            self.recipients.append({"email": email, "name": name, "checked": True})
+            existing_emails.add(email.lower())
+            added += 1
+
+        self._update_recipient_list()
+        self.import_status.setText(f"✅ {added} leads received from Email Scraper")
+        self.clear_import_btn.setEnabled(bool(self.recipients))
 
     # === EMAIL GENERATION ===
     def _load_models(self):
