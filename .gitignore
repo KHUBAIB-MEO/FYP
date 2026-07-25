@@ -39,3 +39,27 @@ Thumbs.db
 # Secrets — never commit API keys
 .env
 *.key
+
+# Secrets - NEVER commit
+.env
+voiceagent/.env
+credentials.json
+token.json
+voiceagent/credentials.json
+voiceagent/token.json
+
+# Voice agent local data (secrets & generated)
+voiceagent/data/
+voiceagent/uploads/
+voiceagent/data/chroma/
+voiceagent/token.json
+
+# ngrok
+ngrok.exe
+
+# HuggingFace / model cache
+.cache/
+
+data/analytics.db
+data/memory.json
+data/*.db

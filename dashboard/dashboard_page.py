@@ -179,6 +179,13 @@ class DashboardPage(QWidget):
         self.hunter2_card.clicked.connect(self.agentSelected.emit)
         self.cards.append(self.hunter2_card)
 
+        self.voice_card = AgentCard(
+            "voiceagent", "\U0001F399\uFE0F", "Voice Agent",
+            "AI phone agent that answers real calls - schedules meetings against your Google Calendar and answers caller questions from your uploaded documents.",
+            self.theme)
+        self.voice_card.clicked.connect(self.agentSelected.emit)
+        self.cards.append(self.voice_card)
+        
         COLUMNS = 3
         for i, card in enumerate(self.cards):
             grid_layout.addWidget(card, i // COLUMNS, i % COLUMNS, alignment=Qt.AlignmentFlag.AlignCenter)

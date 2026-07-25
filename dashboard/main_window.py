@@ -15,6 +15,7 @@ from emailagent.email_page import EmailPage
 from contentscripting.content_page import ContentPage
 from emailscraper.emailscraper_page import EmailScraperPage
 from shared.settings import APP_NAME, get_theme, save_theme, LIGHT_THEME, DARK_THEME
+from voiceagent.voiceagent_page import VoiceAgentPage
 
 
 class MainWindow(QMainWindow):
@@ -43,6 +44,8 @@ class MainWindow(QMainWindow):
         self.content_page = ContentPage(self.current_theme)
         self.scraper_page = EmailScraperPage(self.current_theme)
         self.hunter2_page = ProductHunter2Page(self.current_theme)
+        self.voice_page = None  # built on first click (keeps startup fast)
+        
 
         # Add to stack
         self.central_stack.addWidget(self.dashboard_page)
@@ -50,6 +53,7 @@ class MainWindow(QMainWindow):
         self.central_stack.addWidget(self.content_page)
         self.central_stack.addWidget(self.scraper_page)
         self.central_stack.addWidget(self.hunter2_page)
+        
         
 
         # Connect signals
@@ -89,6 +93,12 @@ class MainWindow(QMainWindow):
             self.central_stack.setCurrentWidget(self.scraper_page)
         elif agent_id == "producthunter2":
             self.central_stack.setCurrentWidget(self.hunter2_page)
+        elif agent_id == "voiceagent":
+            if self.voice_page is None:
+                self.voice_page = VoiceAgentPage(
+                    go_back=self._back_to_dashboard)
+                self.central_stack.addWidget(self.voice_page)
+            self.central_stack.setCurrentWidget(self.voice_page)
 
     def _handle_leads_from_scraper(self, leads):
         self.email_page.add_recipients_from_leads(leads)
